@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>chatGPT </title>
+    <style>
+        .container {
+            position: relative;
+            width: 800px;
+            height: 90vh;
+            margin: 24px auto;
+            padding: 0 24px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .header {
+            width: 100%;
+            height: 40px;
+            font-size: 22px;
+            font-weight: 500;
+            text-align: center;
+            line-height: 40px;
+        }
+
+        .message-container {
+            height: calc(90vh - 160px);
+            overflow-y: scroll;
+            padding: 16px;
+        }
+
+        .message-container .user-message,
+        .message-container .bot-message {
+            position: relative;
+            max-width: 70%;
+            padding: 8px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            font-family: PingFangSC-Regular;
+            font-size: 16px;
+            color: #1e1f24;
+            line-height: 24px;
+        }
+
+        .message-container .user-message::after,
+        .message-container .bot-message::after {
+            content: "";
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            top: 0;
+            border-radius: 50%;
+        }
+
+        .message-container .user-message {
+            margin-left: 30%;
+            margin-right: 48px;
+            background: #f4f4f4;
+        }
+
+        .message-container .bot-message {
+            margin-left: 48px;
+            background: #f4f4f4;
+        }
+
+        .message-container .user-message::after {
+            right: -48px;
+            background: url(user.png) no-repeat center / contain;
+        }
+
+        .message-container .bot-message::after {
+            left: -48px;
+            background: url(bot.jpg) no-repeat center / contain;
+        }
+
+        .input-container {
+            position: absolute;
+            width: 100%;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            bottom: 0;
+            left: 0;
+            padding-left: 20px;
+            box-sizing: border-box;
+            background: #fff;
+        }
+
+        #message-input {
+            width: 700px;
+            height: 32px;
+            border-radius: 8px;
+            font-size: 18px;
+            padding: 0 8px;
+            border: 1px solid #ccc;
+        }
+
+        #send-button {
+            width: 44px;
+            height: 44px;
+            padding-right: 40px;
+            border-radius: 50%;
+            background: url(send.jpg) no-repeat center / contain;
+            cursor: pointer;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="header">ChatGPT</div>
+    <div id="chatMessages" class="message-container"></div>
+    <div class="input-container">
+        <input type="text" id="message-input" placeholder="请输入" onkeydown="submitOnEnter(event)"/>
+        <div id="send-button" onclick="sendMessage()"></div>
+    </div>
+
+    <script>
+        var dialogue = []
+        var chatMessages = document.getElementById('chatMessages');
+        var hist = []
+        function chatGLM_api(data, max_length = 512, kwargs = {}, callback) {
+            var url = "your url here";
+            var headers = {};
+
+            var requestData = {
+                "prompt": data,
+                "max_length": max_length,
+                'other_arguments':kwargs,
+                'history': hist,
+            };
+            $.ajax({
+                url: url,
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json",
+                data: JSON.stringify(requestData),
+                success: function(response) {
+                    console.log("成功：", response.response);
+                    var res = {'message': response.response};
+                    dialogue.push(res);
+
+                    hist = response.history; // 将API返回的历史记录更新到变量中
+                    console.log("history:", hist)
+
+                    if (callback) {
+                        callback(response.response); // 调用回调函数并传递响应值
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log("失败：", error);
+                    if (callback) {
+                        callback(null); // 调用回调函数并传递 null 表示出现错误
+                    }
+                }
+            });
+        }
+
+        function sendMessage() {
+            var userMessage = document.getElementById("message-input").value;
+            // 空消息不执行
+            if (!userMessage) {
+                return;
+            }
+            var dic = {'message': userMessage, 'is_ask': 1};
+            dialogue.push(dic);
+
+            addMessage('user', userMessage);
+            document.getElementById("message-input").value = ""; // 清空输入框
+            chatGLM_api(userMessage, undefined, undefined, function(botMessage) {
+                if (botMessage !== null) {
+                    // console.log(botMessage);
+                    addMessage('bot', botMessage);
+                } else {
+                    console.log("网络请求出错或无响应");
+                }
+            });
+        }
+
+        //使用回车键发送
+        function submitOnEnter(event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function addMessage(sender, message) {
+            const messageContainer = document.createElement('div');
+            messageContainer.classList.add(sender + '-message');
+            messageContainer.textContent = message;
+            chatMessages.appendChild(messageContainer);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    </script>
+</div>
+</body>
+</html>
