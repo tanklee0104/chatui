@@ -2,7 +2,7 @@
 A chatGPT-like ui code by HTML, this is just a chat interface, you can host your own chatbot!
 
 ## screenshot
-![](https://picgo-tank.oss-cn-beijing.aliyuncs.com/img/202308221726669.png)
+![example](https://picgo-tank.oss-cn-beijing.aliyuncs.com/img/202308221726669.png)
 
 
 ## Functional features
